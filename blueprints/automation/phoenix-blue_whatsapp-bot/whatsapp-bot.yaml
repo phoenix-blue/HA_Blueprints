@@ -1,11 +1,11 @@
-blueprint:
+﻿blueprint:
   name: 'WhatsApp Bot: Conversation with Assist'
   author: 'Customized for WhatsApp'
   domain: automation
   homeassistant:
     min_version: 2024.6.0
   description: >
-    This blueprint enables you to set up a conversational flow between your WhatsApp Bot and Home Assistant, utilizing a conversation agent (such as Home Assistant�s default Assist or another configured agent). The bot will respond only to text messages sent to it on WhatsApp, excluding commands, voice messages, images, etc.
+    This blueprint enables you to set up a conversational flow between your WhatsApp Bot and Home Assistant, utilizing a conversation agent (such as Home Assistant’s default Assist or another configured agent). The bot will respond only to text messages sent to it on WhatsApp, excluding commands, voice messages, images, etc.
 
     **Conversation Agent**  
     REQUIRED: This field specifies the Home Assistant conversation agent that will respond to your messages.
