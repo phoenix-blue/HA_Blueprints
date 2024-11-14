@@ -9,6 +9,12 @@ To use this automation, ensure you have the following:
 - The [WhatsApp integration add-on by Giuseppe Castaldo](https://github.com/giuseppecastaldo/ha-addons/tree/main/whatsapp_addon) configured in Home Assistant. This add-on is required for receiving WhatsApp messages in Home Assistant.
 - The automation blueprint and the appropriate permissions set up to trigger on incoming WhatsApp messages.
 
+## Quick Import
+
+You can quickly import this blueprint into your Home Assistant instance using the button below:
+
+[![Open your Home Assistant instance and show the blueprint import dialog with this blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/phoenix-blue/HA_Blueprints/blob/master/blueprints/automation/phoenix-blue_whatsapp-bot/whatsapp-bot.yaml)
+
 ## Entities
 
 We use two `input_select` entities to store the WhatsApp user and group IDs. These dropdown lists will automatically update with new IDs as messages are received from different users or groups.
