@@ -1,0 +1,106 @@
+blueprint:
+  name: 'WhatsApp Bot: Conversation with Assist'
+  author: 'Customized for WhatsApp'
+  domain: automation
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    This blueprint enables you to set up a conversational flow between your WhatsApp Bot and Home Assistant, utilizing a conversation agent (such as Home Assistant’s default Assist or another configured agent). The bot will respond only to text messages sent to it on WhatsApp, excluding commands, voice messages, images, etc.
+
+    **Conversation Agent**  
+    REQUIRED: This field specifies the Home Assistant conversation agent that will respond to your messages.
+
+    **Whitelist**  
+    To restrict responses to messages only from specific users or groups, set up a whitelist with the following fields:
+
+    - **Whitelist user_id**: Add the mobile numbers (without the suffix '@s.whatsapp.net') that the bot is allowed to respond to. Include the full country code (e.g., `31612345678`).
+    
+    - **Whitelist chat_id**: Add group IDs (without the suffix '@g.us') for groups that the bot should respond to (e.g., `1234567890`).
+
+    Each entry should be on a separate line.
+
+    **Note**: User IDs in WhatsApp differ slightly from other messaging platforms. In private chats, the user ID is their phone number with the full country code (e.g., `31612345678`). In group chats, the group ID appears without the suffix (e.g., `1234567890`).
+
+    **Automatically Saving Chat IDs and User Phone Numbers**  
+    If you want to automatically save chat IDs or phone numbers of incoming WhatsApp messages, please follow the instructions on the repository page for setting up automation to store these values:  
+    [HA_Blueprints Repository](https://github.com/phoenix-blue/HA_Blueprints)
+
+    **Requirements and Base Blueprint**  
+    This blueprint works in combination with the WhatsApp add-on available here:  
+    [WhatsApp Add-on by Giuseppe Castaldo](https://github.com/giuseppecastaldo/ha-addons/tree/main/whatsapp_addon)  
+
+    The blueprint is based on the original work of the Telegram bot blueprint by marc-romu:  
+    [Telegram Bot Blueprint by Marc-Romu](https://github.com/marc-romu/home-assistant_blueprints/tree/main/blueprints/automation/marc-romu_telegram-bot)
+  input:
+    conversation_agent:
+      name: Conversation Agent
+      description: Required. Specifies the Home Assistant conversation agent to respond to your messages.
+      default: conversation.home_assistant
+      selector:
+        conversation_agent: {}
+    whitelist:
+      name: Whitelist
+      description: Restrict responses to specific mobile numbers or group IDs.
+      collapsed: true
+      input:
+        whitelist_user_id:
+          name: Whitelist Mobile Number
+          description: Enter mobile numbers including country code (e.g., 31612345678), without the suffix '@s.whatsapp.net'.
+          default: []
+          selector:
+            text:
+              multiple: true
+              multiline: false
+        whitelist_chat_id:
+          name: Whitelist Group ID
+          description: Enter group IDs (e.g., 1234567890), without the suffix '@g.us'.
+          default: []
+          selector:
+            text:
+              multiple: true
+              multiline: false
+mode: queued
+max: 10
+max_exceeded: warning
+trigger:
+- platform: event
+  id: whatsapp_message
+  event_type: new_whatsapp_message
+variables:
+  conversation_agent: !input conversation_agent
+  whatsapp_sender_id: '{{ trigger.event.data["key"]["remoteJid"] }}'
+  whatsapp_message_text: '{{ trigger.event.data["message"]["conversation"] | default("") }}'
+  whitelist_user_id: !input whitelist_user_id
+  whitelist_chat_id: !input whitelist_chat_id
+  conversation_id: whatsapp_{{ whatsapp_sender_id }}
+condition:
+- and:
+  - or:
+    # Check if whatsapp_sender_id matches a whitelist_user_id (mobile number without suffix)
+    - alias: user_id in whitelist
+      condition: template
+      value_template: >
+        {% set user_id = whatsapp_sender_id.split("@")[0] %}
+        {{ whitelist_user_id | list | length > 0 and user_id in whitelist_user_id | list }}
+    # Check if whatsapp_sender_id matches a whitelist_chat_id (group ID without suffix)
+    - alias: chat_id in whitelist
+      condition: template
+      value_template: >
+        {% set chat_id = whatsapp_sender_id.split("@")[0] %}
+        {{ whitelist_chat_id | list | length > 0 and chat_id in whitelist_chat_id | list }}
+  - condition: template
+    value_template: '{{ whatsapp_message_text != "" }}'
+action:
+- alias: Send message to the conversation agent
+  service: conversation.process
+  data:
+    text: '{{ whatsapp_message_text }}'
+    conversation_id: '{{ conversation_id }}'
+    agent_id: '{{ conversation_agent }}'
+  response_variable: response
+- service: whatsapp.send_message
+  data:
+    clientId: whatsapp
+    to: '{{ whatsapp_sender_id }}'
+    body:
+      text: '{{ response.response.speech.plain.speech }}'
